@@ -2,7 +2,7 @@
  * Based on code from the Python mailing list,
  * https://mail.python.org/pipermail/edu-sig/2012-December/010721.html
  */
-function pi_digits (n, f)
+function act_on_pi_digits (n, f)
 {
     var k = 2;
     var a = 4;
@@ -37,4 +37,23 @@ function pi_digits (n, f)
             d1 = a1/b1;
         }
     }
+}
+
+function build_pie (n)
+{
+    var counts = [];
+    var count = 0;
+    for (var i = 0; i < 10; i++)
+    {
+        counts[i] = 0;
+    }
+
+    var add_digit = function (m)
+    {
+        counts[m] +=1;
+        count++;
+        console.log(count + ': Got m = ' + m, counts);
+    }
+
+    act_on_pi_digits(n, add_digit);
 }
