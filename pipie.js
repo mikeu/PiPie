@@ -3,7 +3,7 @@ var PiPie = (function (undefined) {
 
     var color = d3.scale.category10();
 
-    var digit_counts = [0,0,0,1,0,0,0,0,0,0]; // "pi = 3", initially
+    var digit_counts;
 
     var pie, path, arc;
 
@@ -21,6 +21,14 @@ var PiPie = (function (undefined) {
     }
 
     function initial_pie (selector) {
+        // Reset the animation and counts
+        d3.select(selector)
+            .selectAll('svg')
+            .remove();
+        digit_counts = [0,0,0,1,0,0,0,0,0,0]; // "pi = 3", initially
+
+        // Create the SVG in the now-empty div, translated so that the origin
+        // is at the centre of the circle
         var svg = d3.select(selector)
             .append('svg')
                 .attr('width', 2*radius)
@@ -95,9 +103,10 @@ var PiPie = (function (undefined) {
             if (steps === undefined) {
                 steps = 10;
             }
+
             initial_pie(sel_pie);
+
             var bin_sizes = build_bins(n, steps);
-            console.log(bin_sizes);
             var bin = 1;
             var digits_used = 1;
 
