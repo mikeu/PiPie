@@ -1,3 +1,122 @@
+var PiPie = (function (undefined) {
+    var radius = 150;
+
+    var color = d3.scale.category10();
+
+    var digit_counts = [0,0,0,1,0,0,0,0,0,0]; // "pi = 3", initially
+
+    var pie, path, arc;
+
+    // Some of this updating and tweening is based on:
+    //   http://codepen.io/orchard/pen/bltfm
+    // Store the displayed angles in _current.
+    // Then, interpolate from _current to the new angles.
+    // During the transition, _current is updated in-place by d3.interpolate.
+    function arcTween(a) {
+        var i = d3.interpolate(this.orig, a);
+        this.orig = i(0);
+        return function(t) {
+            return arc(i(t));
+        };
+    }
+
+    function initial_pie (selector) {
+        var svg = d3.select(selector)
+            .append('svg')
+                .attr('width', 2*radius)
+                .attr('height', 2*radius)
+            .append('g')
+                .attr('transform', 'translate(' + radius + ',' + radius + ')');
+
+        // This will draw the arcs of the pie chart
+        arc = d3.svg.arc()
+            .outerRadius(radius);
+
+        // This will calculate the angles to pass to arc
+        pie = d3.layout.pie()
+            .value(function (d) { return d; })
+            .sort(null) // leave in their initial order
+
+        path = svg.selectAll('path')
+            .data(pie(digit_counts))
+            .enter()
+                .append('path')
+                .attr('d', arc)
+                .attr('fill', function (d, i) {
+                    return color(i);
+                })
+                .each(function (d) { this.orig = d;});
+    }
+
+    function update_pie () {
+        path.data(pie(digit_counts))
+        path.transition().duration(500).attrTween("d", arcTween); // redraw the arcs
+    }
+
+    // Update the digit_counts by adding n digits, starting at position s
+    function update_counts (n, s) {
+        digits = PiMill.get_digits(n, s);
+        n = digits.length; // In case we went past the end
+        for (var i = 0; i < n; i++) {
+            digit_counts[digits.charAt(i)]++;
+        }
+        return n;
+    }
+
+    function update_count (selector, n) {
+        d3.select(selector).text(n);
+    }
+
+    function build_bins (n, steps) {
+        var bins = [1];
+        var added = 1; // The initial 3
+        var step; // Size of the next step
+        var base = Math.pow(n, 1/steps); // Use a logarithmic scale
+        var next_level = base;
+        for (var i = 1; i < steps - 1; i++) {
+            step = Math.floor(next_level) - added;
+            if (step < 1) {
+                step = 1;
+            }
+            bins.push(step);
+            added += step;
+            next_level *= base;
+        }
+        bins.push(n - added);
+
+        return bins;
+    }
+
+    return {
+        go: function (sel_pie, sel_count, n, steps) {
+            if (n === undefined) {
+                n = 100;
+            }
+            if (steps === undefined) {
+                steps = 10;
+            }
+            initial_pie(sel_pie);
+            var bin_sizes = build_bins(n, steps);
+            console.log(bin_sizes);
+            var bin = 1;
+            var digits_used = 1;
+
+            update_count(sel_count, digits_used);
+
+            function iterate () {
+                var added = update_counts(bin_sizes[bin], digits_used);
+                digits_used += added;
+                update_count(sel_count, digits_used);
+                update_pie();
+                if (++bin < bin_sizes.length) {
+                    window.setTimeout(iterate, 500)
+                }
+            }
+            iterate();
+        }
+    };
+}());
+
 /*
  * Based on the spigot algorithm, with code from
  *   http://stackoverflow.com/questions/4084571/implementing-the-spigot-algorithm-for-%CF%80-pi
